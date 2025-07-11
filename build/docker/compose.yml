@@ -1,0 +1,64 @@
+services:
+  orangebank-api-dev:
+    container_name: orangebank-api-dev
+    build:
+      context: ../../
+      dockerfile: build/docker/Dockerfile
+    ports:
+      - "3003:3003"
+    volumes:
+      - ../../src:/app/src
+    environment:
+      DATABASE_DB: "dev-orangebank"
+      DATABASE_USER: "backend-orangebank"
+      DATABASE_PASSWORD: "backend-orangebank"
+      NODE_ENV: "dev"
+      PORT: 3003
+      DATABASE_URL: "postgresql://backend-orangebank:backend-orangebank@postgres:5432/dev-orangebank"
+    # env_file:
+    #   - ../../.env
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+    networks:
+      - default
+
+  orangebank-api-prd:
+    container_name: orangebank-api-prd
+    build:
+      context: ../../
+      dockerfile: build/docker/Dockerfile.prod
+    ports:
+      - "3003:3003"
+    env_file:
+      - ../../.env
+    profiles:
+      - prod
+    networks:
+      - default
+
+  postgres:
+    container_name: postgres
+    # restart: always
+    image: postgres:17
+    environment:
+      POSTGRES_USER: backend-orangebank
+      POSTGRES_PASSWORD: backend-orangebank
+    volumes:
+      - ../../postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles:
+      - dev
+      - prod
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: orangebank-network
+    driver: bridge
