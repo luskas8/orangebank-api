@@ -1,7 +1,7 @@
 {
   "name": "api",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.2.0",
+  "description": "Backend para o hackathon do orange-juice, com desafio de criar um mini banco de investimentos",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -25,6 +25,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.0",
     "nestjs-pino": "^4.4.0",
     "pino-http": "^10.5.0",
     "pino-pretty": "^13.0.0",
