@@ -1,0 +1,30 @@
+{
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testPathIgnorePatterns": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".nuxt",
+    "out",
+    "public"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!@nestjs/.*|@prisma/.*|nestjs-pino|pino-http)"
+  ],
+  "moduleNameMapper": {
+    "^@database/prisma/(.*)$": "<rootDir>/src/database/prisma/$1",
+    "^@src/(.*)$": "<rootDir>/src/$1",
+    "^@account/(.*)$": "<rootDir>/src/account/$1"
+  }
+}

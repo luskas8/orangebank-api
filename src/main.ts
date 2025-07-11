@@ -1,10 +1,17 @@
+import { PrismaService } from '@database/prisma/prisma.service';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { description, version } from '../package.json';
-import { AppModule } from './app.module';
+import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useLogger(app.get(Logger));
+
+  const prismaService = app.get(PrismaService);
+  prismaService.enableShutdownHooks(app);
 
   const config = new DocumentBuilder()
     .setTitle('OrangeBank API')
