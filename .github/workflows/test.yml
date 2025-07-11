@@ -1,0 +1,20 @@
+name: test
+
+on:
+  push:
+    branches:
+      - '*/*'
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    container: node:22-alpine
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm ci
+      - name: Build project
+        run: npm run build --if-present
+      - name: Run Unit Tests
+        run: npm test
