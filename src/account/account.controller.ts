@@ -16,12 +16,16 @@ import { Account, Transaction } from '@prisma/client';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { TransactionDto } from './dto/simple-transaction.dto';
+import { TransactionService } from './transaction.service';
 
 @Controller('account')
 export class AccountController {
   private readonly logger = new Logger(AccountController.name);
 
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly transactionService: TransactionService,
+  ) {}
 
   @Post('create')
   async create(
@@ -73,12 +77,17 @@ export class AccountController {
       return new BadRequestException('toAccountId is required');
     }
 
-    const result = await this.accountService.deposit(dto);
-    if (result instanceof Error) {
-      throw new BadRequestException(result.message, String(result.cause));
-    }
+    try {
+      const result = await this.transactionService.deposit(
+        dto.toAccountId,
+        dto.amount,
+      );
 
-    return result;
+      return result;
+    } catch (error: any) {
+      this.logger.error('Deposit failed', error);
+      return new BadRequestException('Deposit failed');
+    }
   }
 
   @Post('withdraw')
@@ -89,11 +98,16 @@ export class AccountController {
       return new BadRequestException('fromAccountId is required');
     }
 
-    const result = await this.accountService.withdraw(dto);
-    if (result instanceof Error) {
-      throw new BadRequestException(result.message, String(result.cause));
-    }
+    try {
+      const result = await this.transactionService.withdraw(
+        dto.fromAccountId,
+        dto.amount,
+      );
 
-    return result;
+      return result;
+    } catch (error: any) {
+      this.logger.error('Withdraw failed', error);
+      return new BadRequestException('Withdraw failed');
+    }
   }
 }

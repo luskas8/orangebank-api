@@ -1,165 +1,319 @@
-import { PrismaService } from '@database/prisma/prisma.service';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Account, Transaction } from '@prisma/client';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { TransactionDto } from './dto/simple-transaction.dto';
+import { TransactionService } from './transaction.service';
+
+const mockAccount: Account = {
+  id: '1',
+  active: true,
+  balance: 1000,
+  type: 'current_account',
+  createdAt: new Date('2025-01-01T00:00:00Z'),
+  updatedAt: new Date('2025-01-01T00:00:00Z'),
+  pendingTransaction: false,
+};
+
+const mockTransaction: Transaction = {
+  id: '1',
+  amount: 100,
+  toAccountId: '1',
+  fromAccountId: null,
+  description: 'Test transaction',
+  type: 'internal',
+  createdAt: new Date('2025-01-01T00:00:00Z'),
+  updatedAt: new Date('2025-01-01T00:00:00Z'),
+};
 
 describe('AccountController', () => {
   let controller: AccountController;
-  let service: AccountService;
-
-  const input = {
-    active: true,
-    balance: 1000,
-    type: 'current_account',
-  } as CreateAccountDto;
+  let accountService: jest.Mocked<AccountService>;
+  let transactionService: jest.Mocked<TransactionService>;
 
   beforeEach(async () => {
+    const mockAccountService = {
+      create: jest.fn(),
+      findOne: jest.fn(),
+      update: jest.fn(),
+    };
+
+    const mockTransactionService = {
+      deposit: jest.fn(),
+      withdraw: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountController],
-      providers: [AccountService, PrismaService],
+      providers: [
+        {
+          provide: AccountService,
+          useValue: mockAccountService,
+        },
+        {
+          provide: TransactionService,
+          useValue: mockTransactionService,
+        },
+      ],
     }).compile();
 
     controller = module.get<AccountController>(AccountController);
-    service = module.get<AccountService>(AccountService);
+    accountService = module.get(AccountService);
+    transactionService = module.get(TransactionService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should create an account', async () => {
-    // WHEN
-    jest
-      .spyOn(service, 'create')
-      .mockResolvedValue(input as unknown as Account);
+  describe('create', () => {
+    it('should create an account successfully', async () => {
+      // GIVEN
+      const input: CreateAccountDto = {
+        active: true,
+        balance: 1000,
+        type: 'current_account',
+      };
+      accountService.create.mockResolvedValue(mockAccount);
 
-    // THEN
-    const account = await controller.create(input);
-    expect(account).toBeDefined();
-    expect(account).toHaveProperty('balance', input.balance);
+      // WHEN
+      const result = await controller.create(input);
+
+      // THEN
+      expect(result).toEqual(mockAccount);
+      expect(accountService.create).toHaveBeenCalledWith(input);
+    });
+
+    it('should return BadRequestException if account creation fails', async () => {
+      // GIVEN
+      const input: CreateAccountDto = {
+        active: true,
+        balance: 1000,
+        type: 'current_account',
+      };
+      accountService.create.mockResolvedValue(null);
+
+      // WHEN
+      const result = await controller.create(input);
+
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe(
+        'Account creation failed',
+      );
+    });
   });
 
-  it('should find one account', async () => {
-    // GIVEN
-    const id = '1';
+  describe('findOne', () => {
+    it('should find an account successfully', async () => {
+      // GIVEN
+      const id = '1';
+      accountService.findOne.mockResolvedValue(mockAccount);
 
-    // WHEN
-    jest
-      .spyOn(service, 'findOne')
-      .mockResolvedValue(input as unknown as Account);
+      // WHEN
+      const result = await controller.findOne(id);
 
-    // THEN
-    const account = await controller.findOne(id);
-    expect(account).toBeDefined();
-    expect(account).toHaveProperty('balance', input.balance);
+      // THEN
+      expect(result).toEqual(mockAccount);
+      expect(accountService.findOne).toHaveBeenCalledWith(id);
+    });
+
+    it('should return NotFoundException if account not found', async () => {
+      // GIVEN
+      const id = 'non-existent';
+      accountService.findOne.mockResolvedValue(null);
+
+      // WHEN
+      const result = await controller.findOne(id);
+
+      // THEN
+      expect(result).toBeInstanceOf(NotFoundException);
+      expect((result as NotFoundException).message).toBe('Account not found');
+    });
   });
 
-  it('should activate an account', async () => {
-    // GIVEN
-    const id = '1';
+  describe('activate', () => {
+    it('should activate an account successfully', async () => {
+      // GIVEN
+      const id = '1';
+      const activatedAccount = { ...mockAccount, active: true };
+      accountService.update.mockResolvedValue(activatedAccount);
 
-    // WHEN
-    jest
-      .spyOn(service, 'update')
-      .mockResolvedValue(input as unknown as Account);
+      // WHEN
+      const result = await controller.activate(id);
 
-    // THEN
-    const account = await controller.activate(id);
-    expect(account).toBeDefined();
-    expect(account).toHaveProperty('balance', input.balance);
+      // THEN
+      expect(result).toEqual(activatedAccount);
+      expect(accountService.update).toHaveBeenCalledWith(id, true);
+    });
+
+    it('should return BadRequestException if activation fails', async () => {
+      // GIVEN
+      const id = '1';
+      accountService.update.mockResolvedValue(null);
+
+      // WHEN
+      const result = await controller.activate(id);
+
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe(
+        'Account activation failed',
+      );
+    });
   });
 
-  it('should deactivate an account', async () => {
-    // GIVEN
-    const id = '1';
+  describe('deactivate', () => {
+    it('should deactivate an account successfully', async () => {
+      // GIVEN
+      const id = '1';
+      const deactivatedAccount = { ...mockAccount, active: false };
+      accountService.update.mockResolvedValue(deactivatedAccount);
 
-    // WHEN
-    jest
-      .spyOn(service, 'update')
-      .mockResolvedValue(input as unknown as Account);
+      // WHEN
+      const result = await controller.deactivate(id);
 
-    // THEN
-    const account = await controller.deactivate(id);
-    expect(account).toBeDefined();
-    expect(account).toHaveProperty('balance', input.balance);
+      // THEN
+      expect(result).toEqual(deactivatedAccount);
+      expect(accountService.update).toHaveBeenCalledWith(id, false);
+    });
+
+    it('should return BadRequestException if deactivation fails', async () => {
+      // GIVEN
+      const id = '1';
+      accountService.update.mockResolvedValue(null);
+
+      // WHEN
+      const result = await controller.deactivate(id);
+
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe(
+        'Account deactivation failed',
+      );
+    });
   });
 
-  it('should do a deposit', async () => {
-    // GIVEN
-    const dto = {
-      amount: 100,
-      toAccountId: '1',
-    } as TransactionDto;
+  describe('deposit', () => {
+    it('should make a deposit successfully', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        toAccountId: '1',
+        description: 'Test deposit',
+      };
+      transactionService.deposit.mockResolvedValue(mockTransaction);
 
-    // WHEN
-    jest.spyOn(service, 'deposit').mockResolvedValue({
-      id: '1',
-      amount: dto.amount,
-      toAccountId: dto.toAccountId,
-      fromAccountId: null,
-      createdAt: new Date(),
-    } as Transaction);
+      // WHEN
+      const result = await controller.deposit(dto);
 
-    // THEN
-    const transaction = await controller.deposit(dto);
-    expect(transaction).toBeDefined();
-    expect(transaction).toHaveProperty('amount', dto.amount);
+      // THEN
+      expect(result).toEqual(mockTransaction);
+      expect(transactionService.deposit).toHaveBeenCalledWith(
+        dto.toAccountId,
+        dto.amount,
+      );
+    });
+
+    it('should return BadRequestException if toAccountId is missing', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        description: 'Test deposit',
+      };
+
+      // WHEN
+      const result = await controller.deposit(dto);
+
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe(
+        'toAccountId is required',
+      );
+    });
+
+    it('should return BadRequestException if deposit fails', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        toAccountId: '1',
+        description: 'Test deposit',
+      };
+      transactionService.deposit.mockRejectedValue(
+        new Error('Account not found'),
+      );
+
+      // WHEN
+      const result = await controller.deposit(dto);
+
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe('Deposit failed');
+    });
   });
 
-  it('should not do a deposit if account does not exist', async () => {
-    // GIVEN
-    const dto = {
-      amount: 100,
-      toAccountId: 'non-existent',
-    } as TransactionDto;
+  describe('withdraw', () => {
+    it('should make a withdrawal successfully', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        fromAccountId: '1',
+        description: 'Test withdrawal',
+      };
+      const withdrawalTransaction = {
+        ...mockTransaction,
+        fromAccountId: '1',
+        toAccountId: null,
+      };
+      transactionService.withdraw.mockResolvedValue(withdrawalTransaction);
 
-    // WHEN
-    jest
-      .spyOn(service, 'deposit')
-      .mockRejectedValue(new Error('Account not found'));
+      // WHEN
+      const result = await controller.withdraw(dto);
 
-    // THEN
-    await expect(controller.deposit(dto)).rejects.toThrow('Account not found');
-  });
+      // THEN
+      expect(result).toEqual(withdrawalTransaction);
+      expect(transactionService.withdraw).toHaveBeenCalledWith(
+        dto.fromAccountId,
+        dto.amount,
+      );
+    });
 
-  it('should do a withdrawal', async () => {
-    // GIVEN
-    const dto = {
-      amount: 100,
-      fromAccountId: '1',
-    } as TransactionDto;
+    it('should return BadRequestException if fromAccountId is missing', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        description: 'Test withdrawal',
+      };
 
-    // WHEN
-    jest.spyOn(service, 'withdraw').mockResolvedValue({
-      id: '1',
-      amount: dto.amount,
-      toAccountId: null,
-      fromAccountId: dto.fromAccountId,
-      createdAt: new Date(),
-    } as Transaction);
+      // WHEN
+      const result = await controller.withdraw(dto);
 
-    // THEN
-    const transaction = await controller.withdraw(dto);
-    expect(transaction).toBeDefined();
-    expect(transaction).toHaveProperty('amount', dto.amount);
-  });
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe(
+        'fromAccountId is required',
+      );
+    });
 
-  it('should not do a withdrawal if account does not exist', async () => {
-    // GIVEN
-    const dto = {
-      amount: 100,
-      fromAccountId: 'non-existent',
-    } as TransactionDto;
+    it('should return BadRequestException if withdrawal fails', async () => {
+      // GIVEN
+      const dto: TransactionDto = {
+        amount: 100,
+        fromAccountId: '1',
+        description: 'Test withdrawal',
+      };
+      transactionService.withdraw.mockRejectedValue(
+        new Error('Insufficient funds'),
+      );
 
-    // WHEN
-    jest
-      .spyOn(service, 'withdraw')
-      .mockRejectedValue(new Error('Account not found'));
+      // WHEN
+      const result = await controller.withdraw(dto);
 
-    // THEN
-    await expect(controller.withdraw(dto)).rejects.toThrow('Account not found');
+      // THEN
+      expect(result).toBeInstanceOf(BadRequestException);
+      expect((result as BadRequestException).message).toBe('Withdraw failed');
+    });
   });
 });
