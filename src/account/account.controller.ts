@@ -15,7 +15,7 @@ import {
 import { Account, Transaction } from '@prisma/client';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { SimpleTransactionDto } from './dto/simple-transaction.dto';
+import { TransactionDto } from './dto/simple-transaction.dto';
 
 @Controller('account')
 export class AccountController {
@@ -67,9 +67,29 @@ export class AccountController {
 
   @Post('deposit')
   async deposit(
-    @Body(ValidationPipe) dto: SimpleTransactionDto,
+    @Body(ValidationPipe) dto: TransactionDto,
   ): Promise<Transaction | HttpException> {
+    if (!dto.toAccountId) {
+      return new BadRequestException('toAccountId is required');
+    }
+
     const result = await this.accountService.deposit(dto);
+    if (result instanceof Error) {
+      throw new BadRequestException(result.message, String(result.cause));
+    }
+
+    return result;
+  }
+
+  @Post('withdraw')
+  async withdraw(
+    @Body(ValidationPipe) dto: TransactionDto,
+  ): Promise<Transaction | HttpException> {
+    if (!dto.fromAccountId) {
+      return new BadRequestException('fromAccountId is required');
+    }
+
+    const result = await this.accountService.withdraw(dto);
     if (result instanceof Error) {
       throw new BadRequestException(result.message, String(result.cause));
     }

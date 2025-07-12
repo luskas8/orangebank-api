@@ -4,7 +4,7 @@ import { Account, Transaction } from '@prisma/client';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { SimpleTransactionDto } from './dto/simple-transaction.dto';
+import { TransactionDto } from './dto/simple-transaction.dto';
 
 describe('AccountController', () => {
   let controller: AccountController;
@@ -92,7 +92,7 @@ describe('AccountController', () => {
     const dto = {
       amount: 100,
       toAccountId: '1',
-    } as SimpleTransactionDto;
+    } as TransactionDto;
 
     // WHEN
     jest.spyOn(service, 'deposit').mockResolvedValue({
@@ -114,7 +114,7 @@ describe('AccountController', () => {
     const dto = {
       amount: 100,
       toAccountId: 'non-existent',
-    } as SimpleTransactionDto;
+    } as TransactionDto;
 
     // WHEN
     jest
@@ -123,5 +123,43 @@ describe('AccountController', () => {
 
     // THEN
     await expect(controller.deposit(dto)).rejects.toThrow('Account not found');
+  });
+
+  it('should do a withdrawal', async () => {
+    // GIVEN
+    const dto = {
+      amount: 100,
+      fromAccountId: '1',
+    } as TransactionDto;
+
+    // WHEN
+    jest.spyOn(service, 'withdraw').mockResolvedValue({
+      id: '1',
+      amount: dto.amount,
+      toAccountId: null,
+      fromAccountId: dto.fromAccountId,
+      createdAt: new Date(),
+    } as Transaction);
+
+    // THEN
+    const transaction = await controller.withdraw(dto);
+    expect(transaction).toBeDefined();
+    expect(transaction).toHaveProperty('amount', dto.amount);
+  });
+
+  it('should not do a withdrawal if account does not exist', async () => {
+    // GIVEN
+    const dto = {
+      amount: 100,
+      fromAccountId: 'non-existent',
+    } as TransactionDto;
+
+    // WHEN
+    jest
+      .spyOn(service, 'withdraw')
+      .mockRejectedValue(new Error('Account not found'));
+
+    // THEN
+    await expect(controller.withdraw(dto)).rejects.toThrow('Account not found');
   });
 });

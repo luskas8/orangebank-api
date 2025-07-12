@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Account } from '@prisma/client';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { SimpleTransactionDto } from './dto/simple-transaction.dto';
+import { TransactionDto } from './dto/simple-transaction.dto';
 
 const output: Account = {
   id: '1',
@@ -14,7 +14,7 @@ const output: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
 };
-const deposit_input: SimpleTransactionDto = {
+const deposit_input: TransactionDto = {
   toAccountId: output.id,
   amount: 500,
   description: 'Deposit for testing',
@@ -31,7 +31,9 @@ describe('AccountService', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn().mockResolvedValue(deposit_input),
+            $transaction: jest
+              .fn()
+              .mockImplementation(() => Promise.resolve(deposit_input)),
             account: {
               create: jest.fn().mockResolvedValue(output),
               findUnique: jest.fn().mockResolvedValue(output),
@@ -130,5 +132,54 @@ describe('AccountService', () => {
       throw result;
     }
     expect(result.amount).toEqual(deposit_input.amount);
+  });
+
+  it('should do a withdrawal', async () => {
+    // GIVEN
+    const withdrawal_input: TransactionDto = {
+      fromAccountId: output.id,
+      amount: 200,
+      description: 'Withdrawal for testing',
+    };
+
+    // WHEN
+    const result = await service.withdraw(withdrawal_input);
+
+    // THEN
+    expect(result).toBeDefined();
+    expect(result).not.toBeInstanceOf(Error);
+    if (result instanceof Error) {
+      throw result;
+    }
+    expect(result.amount).toEqual(deposit_input.amount);
+  });
+
+  it('should throw an error if withdrawal exceeds balance', async () => {
+    // GIVEN
+    const withdrawal_input: TransactionDto = {
+      fromAccountId: output.id,
+      amount: 2000, // Exceeds balance
+      description: 'Withdrawal for testing',
+    };
+    jest
+      .spyOn(service, 'withdraw')
+      .mockRejectedValue(new Error('Insufficient funds'));
+
+    // WHEN & THEN
+    await expect(service.withdraw(withdrawal_input)).rejects.toThrow(
+      'Insufficient funds',
+    );
+  });
+
+  it('should throw an error if deposit fails', async () => {
+    // GIVEN
+    jest
+      .spyOn(service, 'deposit')
+      .mockRejectedValue(new Error('Deposit failed'));
+
+    // WHEN & THEN
+    await expect(service.deposit(deposit_input)).rejects.toThrow(
+      'Deposit failed',
+    );
   });
 });
