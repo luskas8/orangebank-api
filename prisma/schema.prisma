@@ -16,12 +16,13 @@ datasource db {
 }
 
 model Account {
-  id        String      @id @default(uuid())
-  active    Boolean
-  balance   Float
-  type      AccountType
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  active             Boolean     @default(true)
+  balance            Float       @default(0)
+  type               AccountType
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  pendingTransaction Boolean     @default(false)
 
   // Relações com Transaction
   sentTransactions     Transaction[] @relation("FromAccount")
@@ -53,10 +54,6 @@ model Transaction {
 }
 
 enum TransactionType {
-  transfer
-  deposit
-  withdrawal
-  sell_investment
-  buy_investment
-  fee
+  internal
+  external
 }
