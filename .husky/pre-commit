@@ -1,5 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname "$0")/h"
-
-npm run format
+npm test
 npm run lint
+npm run format

@@ -1,7 +1,10 @@
+import { AccountModule } from '@account/account.module';
+import { PrismaModule } from '@database/prisma/prisma.module';
+import { PrismaService } from '@database/prisma/prisma.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppController } from './app.controller';
 import { LoggerModule } from 'nestjs-pino';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -33,8 +36,10 @@ import { LoggerModule } from 'nestjs-pino';
         };
       },
     }),
+    AccountModule,
+    PrismaModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [PrismaService],
 })
 export class AppModule {}

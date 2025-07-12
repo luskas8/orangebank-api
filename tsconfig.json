@@ -18,5 +18,10 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
+    "paths": {
+      "@database/*": ["./src/database/*"],
+      "@src/*": ["./src/*"],
+      "@account/*": ["./src/account/*"],
+    }
   }
 }
