@@ -20,7 +20,7 @@ model User {
   name      String
   email     String   @unique
   cpf       String   @unique
-  bithDate  DateTime
+  birthDate  DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   password  String

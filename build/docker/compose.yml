@@ -15,8 +15,8 @@ services:
       NODE_ENV: "dev"
       PORT: 3003
       DATABASE_URL: "postgresql://backend-orangebank:backend-orangebank@postgres:5432/dev-orangebank"
-    # env_file:
-    #   - ../../.env
+    env_file:
+      - ../../.env
     depends_on:
       - postgres
     profiles:

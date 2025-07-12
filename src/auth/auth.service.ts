@@ -3,18 +3,18 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtModuleOptions, JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { AccountService } from '@src/account/account.service';
+import { CreateAccountDto } from '@src/account/dto/create-account.dto';
 import { LoggedInUser } from './dto/logged-in-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { CreateAccountDto } from '@src/account/dto/create-account.dto';
 
-export interface JwtPayload {
+export interface JwtPayload extends JwtModuleOptions {
   sub: string;
   email: string;
 }
@@ -45,35 +45,36 @@ export class AuthService {
       email: user.email,
       name: user.name,
       cpf: user.cpf,
-      birthDate: user.bithDate.toDateString(),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
+      birthDate: user.birthDate.toDateString() as string,
     } as LoggedInUser;
   }
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
+    const expiresIn = process.env.JWT_EXPIRES_IN;
 
-    const payload: JwtPayload = {
+    const payload = {
       sub: user.id.toString(),
       email: user.email,
-    };
+      algorithm: 'HS256',
+      issuer: 'orangebank-api',
+      audience: 'orangebank-users',
+    } as JwtSignOptions;
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
+      expiresIn: expiresIn,
     };
   }
 
   async register(dto: RegisterDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { email, password, birthDate } = dto;
 
     const existingUser = await this.prismaService.user.findUnique({
-      where: { email: email },
+      where: { email: email as string },
     });
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
@@ -86,18 +87,20 @@ export class AuthService {
       data: {
         ...dto,
         password: hashedPassword,
-        bithDate: formattedBirthDate,
+        birthDate: formattedBirthDate,
       } as Prisma.UserCreateInput,
     });
 
     await this.accountService.create({
       type: 'current_account',
       balance: 0,
+      userId: user.id,
     } as CreateAccountDto);
 
     await this.accountService.create({
       type: 'investment_account',
       balance: 0,
+      userId: user.id,
     } as CreateAccountDto);
 
     return {
@@ -105,9 +108,9 @@ export class AuthService {
       email: user.email,
       name: user.name,
       cpf: user.cpf,
-      birthDate: user.bithDate.toDateString(),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
+      birthDate: user.birthDate.toDateString() as string,
     } as LoggedInUser;
   }
 
@@ -119,7 +122,7 @@ export class AuthService {
         email: true,
         name: true,
         cpf: true,
-        bithDate: true,
+        birthDate: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -134,7 +137,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       cpf: user.cpf,
-      birthDate: user.bithDate.toDateString(),
+      birthDate: user.birthDate.toDateString(),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
     } as LoggedInUser;
