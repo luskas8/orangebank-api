@@ -15,6 +15,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int      @id @default(autoincrement()) @map("user_id")
+  name      String
+  email     String   @unique
+  cpf       String   @unique
+  bithDate  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  password  String
+
+  // Relações com Account
+  accounts Account[]
+
+  @@map("users")
+}
+
 model Account {
   id                 String      @id @default(uuid())
   active             Boolean     @default(true)
@@ -27,6 +43,8 @@ model Account {
   // Relações com Transaction
   sentTransactions     Transaction[] @relation("FromAccount")
   receivedTransactions Transaction[] @relation("ToAccount")
+  User                 User?         @relation(fields: [userId], references: [id])
+  userId               Int?
 
   @@map("accounts")
 }
