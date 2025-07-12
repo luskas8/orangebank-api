@@ -3,8 +3,10 @@ import { PrismaModule } from '@database/prisma/prisma.module';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { AppController } from './app.controller';
     }),
     AccountModule,
     PrismaModule,
+    AuthModule,
+    PassportModule,
   ],
   controllers: [AppController],
   providers: [PrismaService],
