@@ -47,7 +47,7 @@ export class AuthService {
       cpf: user.cpf,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-      birthDate: user.birthDate.toDateString() as string,
+      birthDate: user.birthDate.toDateString(),
     } as LoggedInUser;
   }
 
@@ -70,11 +70,10 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { email, password, birthDate } = dto;
 
     const existingUser = await this.prismaService.user.findUnique({
-      where: { email: email as string },
+      where: { email: email },
     });
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
@@ -110,7 +109,7 @@ export class AuthService {
       cpf: user.cpf,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-      birthDate: user.birthDate.toDateString() as string,
+      birthDate: user.birthDate.toDateString(),
     } as LoggedInUser;
   }
 
