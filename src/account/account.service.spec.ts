@@ -6,6 +6,7 @@ import { CreateAccountDto } from './dto/create-account.dto';
 
 const mockAccount: Account = {
   id: '1',
+  userId: 1,
   active: true,
   balance: 1000,
   type: 'current_account',
@@ -52,6 +53,7 @@ describe('AccountService', () => {
         balance: 1000,
         type: 'current_account',
         active: true,
+        userId: 1,
       };
 
       // WHEN
@@ -71,6 +73,7 @@ describe('AccountService', () => {
         balance: 1000,
         type: 'current_account',
         active: true,
+        userId: 1,
       };
       jest
         .spyOn(prismaService.account, 'create')

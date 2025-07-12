@@ -9,6 +9,7 @@ import { TransactionService } from './transaction.service';
 
 const mockAccount: Account = {
   id: '1',
+  userId: 1,
   active: true,
   balance: 1000,
   type: 'current_account',
@@ -75,6 +76,7 @@ describe('AccountController', () => {
         active: true,
         balance: 1000,
         type: 'current_account',
+        userId: 1,
       };
       accountService.create.mockResolvedValue(mockAccount);
 
@@ -92,6 +94,7 @@ describe('AccountController', () => {
         active: true,
         balance: 1000,
         type: 'current_account',
+        userId: 1,
       };
       accountService.create.mockResolvedValue(null);
 

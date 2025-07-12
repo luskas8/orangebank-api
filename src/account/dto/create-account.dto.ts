@@ -34,4 +34,14 @@ export class CreateAccountDto {
     default: true,
   })
   active: boolean = true;
+
+  @ApiProperty({
+    description: 'The user ID associated with the account',
+    example: 1,
+    required: true,
+  })
+  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
+  userId: number;
 }

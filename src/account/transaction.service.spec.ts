@@ -6,6 +6,7 @@ import { TransactionService } from './transaction.service';
 
 const mockAccount: Account = {
   id: 'account-1',
+  userId: 1,
   active: true,
   balance: 1000,
   type: 'current_account',
@@ -16,6 +17,7 @@ const mockAccount: Account = {
 
 const mockInvestmentAccount: Account = {
   id: 'investment-account-1',
+  userId: 1,
   active: true,
   balance: 5000,
   type: 'investment_account',
