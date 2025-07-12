@@ -38,9 +38,11 @@ export class TransactionService {
 
       const transaction = await prisma.transaction.create({
         data: {
+          fromAccountId: null,
           toAccountId: accountId,
           type: 'internal',
           amount,
+          description: 'Deposit',
         },
       });
 
@@ -87,8 +89,10 @@ export class TransactionService {
       const transaction = await prisma.transaction.create({
         data: {
           fromAccountId: accountId,
+          toAccountId: null,
           type: 'internal',
           amount,
+          description: 'Withdrawal',
         },
       });
 
@@ -100,6 +104,7 @@ export class TransactionService {
     fromAccountId: string,
     toAccountId: string,
     amount: number,
+    describetion: string,
   ): Promise<Transaction> {
     if (amount <= 0) {
       throw new TransactionException(
@@ -141,6 +146,19 @@ export class TransactionService {
         );
       }
 
+      if (
+        fromAccount.type === 'investment_account' &&
+        toAccount.type === 'investment_account'
+      ) {
+        throw new TransactionException(
+          'INVALID_ACCOUNT_TYPE',
+          'Operation not allowed on investment accounts',
+        );
+      }
+
+      const transferType =
+        fromAccount.userId === toAccount.userId ? 'internal' : 'external';
+
       await prisma.account.update({
         where: { id: fromAccountId },
         data: { balance: { decrement: amount } },
@@ -153,8 +171,9 @@ export class TransactionService {
         data: {
           fromAccountId,
           toAccountId,
-          type: 'internal',
+          type: transferType,
           amount,
+          description: describetion,
         },
       });
 

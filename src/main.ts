@@ -28,6 +28,7 @@ async function bootstrap() {
     .setDescription('Documentation for the OrangeBank API')
     .setVersion(version)
     .addTag('orangebank-api', description)
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documentFactory);

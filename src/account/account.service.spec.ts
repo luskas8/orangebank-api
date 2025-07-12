@@ -24,6 +24,7 @@ describe('AccountService', () => {
       account: {
         create: jest.fn().mockResolvedValue(mockAccount),
         findUnique: jest.fn().mockResolvedValue(mockAccount),
+        findMany: jest.fn(),
         update: jest.fn().mockResolvedValue(mockAccount),
       },
     };
@@ -115,6 +116,59 @@ describe('AccountService', () => {
       expect(account).toBeNull();
       expect(prismaService.account.findUnique).toHaveBeenCalledWith({
         where: { id },
+      });
+    });
+  });
+
+  describe('findByUser', () => {
+    it('should find accounts by user successfully', async () => {
+      // GIVEN
+      const userId = 1;
+      const mockAccounts = [mockAccount, { ...mockAccount, id: '2' }];
+      jest
+        .spyOn(prismaService.account, 'findMany')
+        .mockResolvedValue(mockAccounts);
+
+      // WHEN
+      const accounts = await service.findByUser(userId);
+
+      // THEN
+      expect(accounts).toBeDefined();
+      expect(accounts).toEqual(mockAccounts);
+      expect(prismaService.account.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+    });
+
+    it('should return null if no accounts found for user', async () => {
+      // GIVEN
+      const userId = 999;
+      jest.spyOn(prismaService.account, 'findMany').mockResolvedValue([]);
+
+      // WHEN
+      const accounts = await service.findByUser(userId);
+
+      // THEN
+      expect(accounts).toBeNull();
+      expect(prismaService.account.findMany).toHaveBeenCalledWith({
+        where: { userId },
+      });
+    });
+
+    it('should return null if findMany returns null', async () => {
+      // GIVEN
+      const userId = 999;
+      jest
+        .spyOn(prismaService.account, 'findMany')
+        .mockResolvedValue(null as any);
+
+      // WHEN
+      const accounts = await service.findByUser(userId);
+
+      // THEN
+      expect(accounts).toBeNull();
+      expect(prismaService.account.findMany).toHaveBeenCalledWith({
+        where: { userId },
       });
     });
   });

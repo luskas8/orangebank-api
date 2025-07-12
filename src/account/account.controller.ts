@@ -1,3 +1,4 @@
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import {
   BadRequestException,
   Body,
@@ -10,15 +11,21 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Account, Transaction } from '@prisma/client';
+import { GetUser } from '@src/auth/decorators/get-user.decorator';
+import { LoggedInUser } from '@src/auth/dto/logged-in-user.dto';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { TransactionDto } from './dto/simple-transaction.dto';
+import { DepositDto, TransactionDto, WithdrawDto } from './dto/transaction.dto';
 import { TransactionService } from './transaction.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('account')
+@ApiBearerAuth()
 export class AccountController {
   private readonly logger = new Logger(AccountController.name);
 
@@ -34,6 +41,18 @@ export class AccountController {
     const account = await this.accountService.create(createAccountDto);
     if (!account) {
       return new BadRequestException('Account creation failed');
+    }
+
+    return account;
+  }
+
+  @Get('get')
+  async findByUser(
+    @GetUser() user: LoggedInUser,
+  ): Promise<Account[] | HttpException> {
+    const account = await this.accountService.findByUser(user.id);
+    if (!account) {
+      return new NotFoundException('Account not found');
     }
 
     return account;
@@ -71,15 +90,23 @@ export class AccountController {
 
   @Post('deposit')
   async deposit(
-    @Body(ValidationPipe) dto: TransactionDto,
+    @GetUser() user: LoggedInUser,
+    @Body(ValidationPipe) dto: DepositDto,
   ): Promise<Transaction | HttpException> {
-    if (!dto.toAccountId) {
-      return new BadRequestException('toAccountId is required');
+    const accounts = await this.accountService.findByUser(user.id);
+    if (!accounts || accounts.length === 0) {
+      return new NotFoundException('No accounts found for user');
+    }
+    const currentAccount = accounts.find(
+      (account: Account) => account.type === 'current_account',
+    );
+    if (!currentAccount) {
+      return new NotFoundException('Current account not found');
     }
 
     try {
       const result = await this.transactionService.deposit(
-        dto.toAccountId,
+        currentAccount.id,
         dto.amount,
       );
 
@@ -92,15 +119,23 @@ export class AccountController {
 
   @Post('withdraw')
   async withdraw(
-    @Body(ValidationPipe) dto: TransactionDto,
+    @GetUser() user: LoggedInUser,
+    @Body(ValidationPipe) dto: WithdrawDto,
   ): Promise<Transaction | HttpException> {
-    if (!dto.fromAccountId) {
-      return new BadRequestException('fromAccountId is required');
+    const accounts = await this.accountService.findByUser(user.id);
+    if (!accounts || accounts.length === 0) {
+      return new NotFoundException('No accounts found for user');
+    }
+    const currentAccount = accounts.find(
+      (account: Account) => account.type === 'current_account',
+    );
+    if (!currentAccount) {
+      return new NotFoundException('Current account not found');
     }
 
     try {
       const result = await this.transactionService.withdraw(
-        dto.fromAccountId,
+        currentAccount.id,
         dto.amount,
       );
 
@@ -108,6 +143,37 @@ export class AccountController {
     } catch (error: any) {
       this.logger.error('Withdraw failed', error);
       return new BadRequestException('Withdraw failed');
+    }
+  }
+
+  @Post('transfer')
+  async transfer(
+    @GetUser() user: LoggedInUser,
+    @Body(ValidationPipe) dto: TransactionDto,
+  ): Promise<Transaction | HttpException> {
+    const accounts = await this.accountService.findByUser(user.id);
+    if (!accounts || accounts.length === 0) {
+      return new NotFoundException('No accounts found for user');
+    }
+    const account = accounts.find(
+      (account: Account) => account.type === dto.fromAccountType,
+    );
+    if (!account) {
+      return new NotFoundException('Current account not found');
+    }
+
+    try {
+      const result = await this.transactionService.transfer(
+        account.id,
+        dto.toAccountId,
+        dto.amount,
+        dto.description || '',
+      );
+
+      return result;
+    } catch (error: any) {
+      this.logger.error('Transfer failed', error);
+      return new BadRequestException('Transfer failed');
     }
   }
 }

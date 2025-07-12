@@ -33,6 +33,17 @@ export class AccountService {
     return account;
   }
 
+  async findByUser(userId: number): Promise<Account[] | null> {
+    const accounts = await this.prismaService.account.findMany({
+      where: { userId },
+    });
+    if (!accounts || accounts.length === 0) {
+      return null;
+    }
+
+    return accounts;
+  }
+
   async update(id: string, accountActive: boolean): Promise<Account | null> {
     if (!(await this.findOne(id))) {
       return null;

@@ -339,7 +339,12 @@ describe('TransactionService', () => {
       );
 
       // Act
-      const result = await service.transfer(fromAccountId, toAccountId, amount);
+      const result = await service.transfer(
+        fromAccountId,
+        toAccountId,
+        amount,
+        'Test transfer',
+      );
 
       // Assert
       expect(result).toEqual(expectedTransaction);
@@ -352,7 +357,7 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(fromAccountId, toAccountId, amount),
+        service.transfer(fromAccountId, toAccountId, amount, 'Test transfer'),
       ).rejects.toThrow(
         new TransactionException(
           'INVALID_AMOUNT',
@@ -367,7 +372,7 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(fromAccountId, toAccountId, amount),
+        service.transfer(fromAccountId, toAccountId, amount, 'Test transfer'),
       ).rejects.toThrow(
         new TransactionException(
           'INVALID_AMOUNT',
@@ -383,7 +388,7 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(sameAccountId, sameAccountId, amount),
+        service.transfer(sameAccountId, sameAccountId, amount, 'Test transfer'),
       ).rejects.toThrow(
         new TransactionException(
           'SAME_ACCOUNT_TRANSFER',
@@ -412,7 +417,12 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(fromAccountId, nonExistentToAccountId, amount),
+        service.transfer(
+          fromAccountId,
+          nonExistentToAccountId,
+          amount,
+          'Test transfer',
+        ),
       ).rejects.toThrow(
         new TransactionException(
           'ACCOUNT_NOT_FOUND',
@@ -444,7 +454,12 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(nonExistentFromAccountId, toAccountId, amount),
+        service.transfer(
+          nonExistentFromAccountId,
+          toAccountId,
+          amount,
+          'Test transfer',
+        ),
       ).rejects.toThrow(
         new TransactionException(
           'ACCOUNT_NOT_FOUND',
@@ -475,13 +490,236 @@ describe('TransactionService', () => {
 
       // Act & Assert
       await expect(
-        service.transfer(fromAccountId, toAccountId, amount),
+        service.transfer(fromAccountId, toAccountId, amount, 'Test transfer'),
       ).rejects.toThrow(
         new TransactionException(
           'INSUFFICIENT_FUNDS',
           'Insufficient funds for transfer',
         ),
       );
+    });
+
+    it('should throw TransactionException when both accounts are investment accounts', async () => {
+      // Arrange
+      const amount = 100;
+      const investmentFromAccount = {
+        ...mockInvestmentAccount,
+        id: 'investment-from-1',
+      };
+      const investmentToAccount = {
+        ...mockInvestmentAccount,
+        id: 'investment-to-1',
+      };
+
+      prismaService.$transaction.mockImplementation(
+        async (callback: (prisma: any) => Promise<Transaction>) => {
+          const mockPrisma = {
+            account: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce(investmentToAccount) // toAccount found
+                .mockResolvedValueOnce(investmentFromAccount), // fromAccount found
+              update: jest.fn(),
+            },
+            transaction: { create: jest.fn() },
+          };
+          return callback(mockPrisma);
+        },
+      );
+
+      // Act & Assert
+      await expect(
+        service.transfer(
+          investmentFromAccount.id,
+          investmentToAccount.id,
+          amount,
+          'Test transfer',
+        ),
+      ).rejects.toThrow(
+        new TransactionException(
+          'INVALID_ACCOUNT_TYPE',
+          'Operation not allowed on investment accounts',
+        ),
+      );
+    });
+
+    it('should create internal transfer when both accounts belong to same user', async () => {
+      // Arrange
+      const amount = 100;
+      const sameUserToAccount = { ...mockAccount, id: 'account-2', userId: 1 };
+      const expectedTransaction = {
+        ...mockTransaction,
+        fromAccountId,
+        toAccountId: sameUserToAccount.id,
+        amount,
+        type: 'internal',
+        description: 'Internal transfer',
+      };
+
+      prismaService.$transaction.mockImplementation(
+        async (callback: (prisma: any) => Promise<Transaction>) => {
+          const mockPrisma = {
+            account: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce(sameUserToAccount) // toAccount found
+                .mockResolvedValueOnce(mockAccount), // fromAccount found
+              update: jest.fn(),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue(expectedTransaction),
+            },
+          };
+          return callback(mockPrisma);
+        },
+      );
+
+      // Act
+      const result = await service.transfer(
+        fromAccountId,
+        sameUserToAccount.id,
+        amount,
+        'Internal transfer',
+      );
+
+      // Assert
+      expect(result).toEqual(expectedTransaction);
+      expect(result.type).toBe('internal');
+    });
+
+    it('should create external transfer when accounts belong to different users', async () => {
+      // Arrange
+      const amount = 100;
+      const differentUserToAccount = {
+        ...mockAccount,
+        id: 'account-2',
+        userId: 2,
+      };
+      const expectedTransaction = {
+        ...mockTransaction,
+        fromAccountId,
+        toAccountId: differentUserToAccount.id,
+        amount,
+        type: 'external',
+        description: 'External transfer',
+      };
+
+      prismaService.$transaction.mockImplementation(
+        async (callback: (prisma: any) => Promise<Transaction>) => {
+          const mockPrisma = {
+            account: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce(differentUserToAccount) // toAccount found
+                .mockResolvedValueOnce(mockAccount), // fromAccount found
+              update: jest.fn(),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue(expectedTransaction),
+            },
+          };
+          return callback(mockPrisma);
+        },
+      );
+
+      // Act
+      const result = await service.transfer(
+        fromAccountId,
+        differentUserToAccount.id,
+        amount,
+        'External transfer',
+      );
+
+      // Assert
+      expect(result).toEqual(expectedTransaction);
+      expect(result.type).toBe('external');
+    });
+
+    it('should allow transfer from investment account to current account', async () => {
+      // Arrange
+      const amount = 100;
+      const fromInvestmentAccount = { ...mockInvestmentAccount, balance: 5000 };
+      const expectedTransaction = {
+        ...mockTransaction,
+        fromAccountId: fromInvestmentAccount.id,
+        toAccountId,
+        amount,
+        description: 'Investment to current',
+      };
+
+      prismaService.$transaction.mockImplementation(
+        async (callback: (prisma: any) => Promise<Transaction>) => {
+          const mockPrisma = {
+            account: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce(toAccount) // toAccount found (current account)
+                .mockResolvedValueOnce(fromInvestmentAccount), // fromAccount found (investment account)
+              update: jest.fn(),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue(expectedTransaction),
+            },
+          };
+          return callback(mockPrisma);
+        },
+      );
+
+      // Act
+      const result = await service.transfer(
+        fromInvestmentAccount.id,
+        toAccountId,
+        amount,
+        'Investment to current',
+      );
+
+      // Assert
+      expect(result).toEqual(expectedTransaction);
+    });
+
+    it('should allow transfer from current account to investment account', async () => {
+      // Arrange
+      const amount = 100;
+      const toInvestmentAccount = {
+        ...mockInvestmentAccount,
+        id: 'investment-to-1',
+      };
+      const expectedTransaction = {
+        ...mockTransaction,
+        fromAccountId,
+        toAccountId: toInvestmentAccount.id,
+        amount,
+        description: 'Current to investment',
+      };
+
+      prismaService.$transaction.mockImplementation(
+        async (callback: (prisma: any) => Promise<Transaction>) => {
+          const mockPrisma = {
+            account: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValueOnce(toInvestmentAccount) // toAccount found (investment account)
+                .mockResolvedValueOnce(mockAccount), // fromAccount found (current account)
+              update: jest.fn(),
+            },
+            transaction: {
+              create: jest.fn().mockResolvedValue(expectedTransaction),
+            },
+          };
+          return callback(mockPrisma);
+        },
+      );
+
+      // Act
+      const result = await service.transfer(
+        fromAccountId,
+        toInvestmentAccount.id,
+        amount,
+        'Current to investment',
+      );
+
+      // Assert
+      expect(result).toEqual(expectedTransaction);
     });
   });
 });
