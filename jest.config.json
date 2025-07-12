@@ -25,6 +25,8 @@
   "moduleNameMapper": {
     "^@database/prisma/(.*)$": "<rootDir>/src/database/prisma/$1",
     "^@src/(.*)$": "<rootDir>/src/$1",
-    "^@account/(.*)$": "<rootDir>/src/account/$1"
+    "^@account/(.*)$": "<rootDir>/src/account/$1",
+    "^@auth/(.*)$": "<rootDir>/src/auth/$1",
+    "^@transaction/(.*)$": "<rootDir>/src/transaction/$1"
   }
 }
