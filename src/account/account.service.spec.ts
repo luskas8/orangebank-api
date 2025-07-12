@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Account } from '@prisma/client';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { SimpleTransactionDto } from './dto/simple-transaction.dto';
 
 const output: Account = {
   id: '1',
@@ -12,6 +13,11 @@ const output: Account = {
   type: 'current_account',
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
+};
+const deposit_input: SimpleTransactionDto = {
+  toAccountId: output.id,
+  amount: 500,
+  description: 'Deposit for testing',
 };
 
 describe('AccountService', () => {
@@ -25,6 +31,7 @@ describe('AccountService', () => {
         {
           provide: PrismaService,
           useValue: {
+            $transaction: jest.fn().mockResolvedValue(deposit_input),
             account: {
               create: jest.fn().mockResolvedValue(output),
               findUnique: jest.fn().mockResolvedValue(output),
@@ -110,5 +117,18 @@ describe('AccountService', () => {
     // THEN
     expect(result).toBeDefined();
     expect(result?.active).toEqual(false);
+  });
+
+  it('should do a deposit', async () => {
+    // WHEN
+    const result = await service.deposit(deposit_input);
+
+    // THEN
+    expect(result).toBeDefined();
+    expect(result).not.toBeInstanceOf(Error);
+    if (result instanceof Error) {
+      throw result;
+    }
+    expect(result.amount).toEqual(deposit_input.amount);
   });
 });

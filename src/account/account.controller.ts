@@ -1,22 +1,26 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  ValidationPipe,
   BadRequestException,
-  NotFoundException,
+  Body,
+  Controller,
+  Delete,
+  Get,
   HttpException,
+  Logger,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  ValidationPipe,
 } from '@nestjs/common';
+import { Account, Transaction } from '@prisma/client';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { Account } from '@prisma/client';
+import { SimpleTransactionDto } from './dto/simple-transaction.dto';
 
 @Controller('account')
 export class AccountController {
+  private readonly logger = new Logger(AccountController.name);
+
   constructor(private readonly accountService: AccountService) {}
 
   @Post('create')
@@ -59,5 +63,17 @@ export class AccountController {
     }
 
     return account;
+  }
+
+  @Post('deposit')
+  async deposit(
+    @Body(ValidationPipe) dto: SimpleTransactionDto,
+  ): Promise<Transaction | HttpException> {
+    const result = await this.accountService.deposit(dto);
+    if (result instanceof Error) {
+      throw new BadRequestException(result.message, String(result.cause));
+    }
+
+    return result;
   }
 }

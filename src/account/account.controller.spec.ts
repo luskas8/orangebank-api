@@ -1,9 +1,10 @@
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Account } from '@prisma/client';
+import { Account, Transaction } from '@prisma/client';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { SimpleTransactionDto } from './dto/simple-transaction.dto';
 
 describe('AccountController', () => {
   let controller: AccountController;
@@ -84,5 +85,43 @@ describe('AccountController', () => {
     const account = await controller.deactivate(id);
     expect(account).toBeDefined();
     expect(account).toHaveProperty('balance', input.balance);
+  });
+
+  it('should do a deposit', async () => {
+    // GIVEN
+    const dto = {
+      amount: 100,
+      toAccountId: '1',
+    } as SimpleTransactionDto;
+
+    // WHEN
+    jest.spyOn(service, 'deposit').mockResolvedValue({
+      id: '1',
+      amount: dto.amount,
+      toAccountId: dto.toAccountId,
+      fromAccountId: null,
+      createdAt: new Date(),
+    } as Transaction);
+
+    // THEN
+    const transaction = await controller.deposit(dto);
+    expect(transaction).toBeDefined();
+    expect(transaction).toHaveProperty('amount', dto.amount);
+  });
+
+  it('should not do a deposit if account does not exist', async () => {
+    // GIVEN
+    const dto = {
+      amount: 100,
+      toAccountId: 'non-existent',
+    } as SimpleTransactionDto;
+
+    // WHEN
+    jest
+      .spyOn(service, 'deposit')
+      .mockRejectedValue(new Error('Account not found'));
+
+    // THEN
+    await expect(controller.deposit(dto)).rejects.toThrow('Account not found');
   });
 });

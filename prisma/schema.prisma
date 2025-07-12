@@ -6,7 +6,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  ooutput       = "./node_modules/@prisma/client"
+  output        = "../node_modules/.prisma/client"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -23,10 +23,40 @@ model Account {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
+  // Relações com Transaction
+  sentTransactions     Transaction[] @relation("FromAccount")
+  receivedTransactions Transaction[] @relation("ToAccount")
+
   @@map("accounts")
 }
 
 enum AccountType {
   current_account
   investment_account
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  fromAccountId String?
+  toAccountId   String?
+  amount        Float
+  type          TransactionType
+  description   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relações com Account
+  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id])
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  transfer
+  deposit
+  withdrawal
+  sell_investment
+  buy_investment
+  fee
 }

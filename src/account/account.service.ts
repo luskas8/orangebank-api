@@ -1,7 +1,8 @@
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { Account } from '@prisma/client';
+import { Account, Transaction } from '@prisma/client';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { SimpleTransactionDto } from './dto/simple-transaction.dto';
 
 @Injectable()
 export class AccountService {
@@ -48,5 +49,41 @@ export class AccountService {
       this.logger.warn(`Failed to activate account: ${error}`);
       return null;
     }
+  }
+
+  async deposit(dto: SimpleTransactionDto): Promise<Transaction | Error> {
+    return this.prismaService.$transaction(async (prisma) => {
+      const account = await prisma.account.findUnique({
+        where: { id: dto.toAccountId },
+      });
+      if (!account) {
+        throw new Error('Account not found', { cause: 'ACCOUNT_NOT_FOUND' });
+      }
+
+      const update = await prisma.account.update({
+        where: { id: dto.toAccountId },
+        data: { balance: { increment: dto.amount } },
+      });
+      if (!update) {
+        throw new Error('Account update failed', {
+          cause: 'ACCOUNT_UPDATE_FAILED',
+        });
+      }
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          amount: dto.amount,
+          toAccountId: dto.toAccountId,
+          description: dto.description,
+        } as Transaction,
+      });
+      if (!transaction) {
+        throw new Error('Transaction creation failed', {
+          cause: 'TRANSACTION_FAILED',
+        });
+      }
+
+      return transaction;
+    });
   }
 }
