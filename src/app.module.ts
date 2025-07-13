@@ -1,12 +1,15 @@
 import { AccountModule } from '@account/account.module';
+import { AuthModule } from '@auth/auth.module';
 import { PrismaModule } from '@database/prisma/prisma.module';
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
-import { AuthModule } from './auth/auth.module';
+import { GlobalExceptionFilter } from './exception/http-exception.filter';
+import { MarketModule } from './market/market.module';
 
 @Module({
   imports: [
@@ -42,8 +45,15 @@ import { AuthModule } from './auth/auth.module';
     PrismaModule,
     AuthModule,
     PassportModule,
+    MarketModule,
   ],
   controllers: [AppController],
-  providers: [PrismaService],
+  providers: [
+    PrismaService,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}

@@ -96,3 +96,71 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Database Seed
+
+This project includes a comprehensive seed system to populate the database with initial data.
+
+### Quick Start
+
+```bash
+# Run the complete seed process
+npm run prisma:seed
+
+# Or use the helper script
+./scripts/seed.sh
+```
+
+### Seed Data Structure
+
+#### Users (users-mock.json)
+```json
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "João Silva",
+      "email": "joao.silva@email.com",
+      "cpf": "123.456.789-00",
+      "birthDate": "1990-01-15"
+    }
+  ]
+}
+```
+
+#### Assets (assets-mock.json)
+```json
+{
+  "stocks": [
+    {
+      "symbol": "BOIB3",
+      "name": "Boi Bom",
+      "sector": "Agro",
+      "currentPrice": 25.50,
+      "dailyVariation": 1.2
+    }
+  ],
+  "fixedIncome": [
+    {
+      "id": "CDB001",
+      "name": "CDB Banco A",
+      "type": "CDB",
+      "rate": 0.12,
+      "rateType": "pre",
+      "maturity": "2024-12-31",
+      "minimumInvestment": 1000.00
+    }
+  ]
+}
+```
+
+### What the seed creates:
+- 👤 Users with default password: `orangebank123@`
+- 💰 Current account for each user with R$ 10,000.00 initial balance
+- 📊 Investment account for each user with R$ 0.00 initial balance
+- 📈 Stock assets with price history
+- 🏦 Fixed income products (CDB, Tesouro Direto)
+
+For detailed information, see [prisma/README.md](./prisma/README.md).
+
+## Run tests

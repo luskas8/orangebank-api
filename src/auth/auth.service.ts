@@ -21,11 +21,28 @@ export interface JwtPayload extends JwtModuleOptions {
 
 @Injectable()
 export class AuthService {
+  private readonly expiresIn = process.env.JWT_EXPIRES_IN || '24h';
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
     private readonly accountService: AccountService,
   ) {}
+
+  private signToken(user: LoggedInUser) {
+    const payload = {
+      sub: user.id.toString(),
+      email: user.email,
+      algorithm: 'HS256',
+      issuer: 'orangebank-api',
+      audience: 'orangebank-users',
+    } as JwtSignOptions;
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      userId: user.id,
+      expiresIn: this.expiresIn,
+    };
+  }
 
   async validateUser(email: string, password: string): Promise<LoggedInUser> {
     const user = await this.prismaService.user.findUnique({
@@ -53,30 +70,20 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-    const expiresIn = process.env.JWT_EXPIRES_IN;
 
-    const payload = {
-      sub: user.id.toString(),
-      email: user.email,
-      algorithm: 'HS256',
-      issuer: 'orangebank-api',
-      audience: 'orangebank-users',
-    } as JwtSignOptions;
-
-    return {
-      access_token: this.jwtService.sign(payload),
-      expiresIn: expiresIn,
-    };
+    return this.signToken(user);
   }
 
   async register(dto: RegisterDto) {
     const { email, password, birthDate } = dto;
 
-    const existingUser = await this.prismaService.user.findUnique({
-      where: { email: email },
+    const users = await this.prismaService.user.findMany({
+      where: {
+        OR: [{ cpf: dto.cpf }, { email: email }],
+      },
     });
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+    if (users.length > 0) {
+      throw new ConflictException('User with this email or CPF already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -102,15 +109,7 @@ export class AuthService {
       userId: user.id,
     } as CreateAccountDto);
 
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      cpf: user.cpf,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-      birthDate: user.birthDate.toDateString(),
-    } as LoggedInUser;
+    return this.signToken(user as unknown as LoggedInUser);
   }
 
   async findById(id: number): Promise<LoggedInUser> {
