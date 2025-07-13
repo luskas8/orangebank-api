@@ -6,7 +6,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  ooutput       = "./node_modules/@prisma/client"
+  output        = "../node_modules/.prisma/client"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -15,13 +15,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int      @id @default(autoincrement()) @map("user_id")
+  name      String
+  email     String   @unique
+  cpf       String   @unique
+  birthDate  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  password  String
+
+  // Relações com Account
+  accounts Account[]
+
+  @@map("users")
+}
+
 model Account {
-  id        String      @id @default(uuid())
-  active    Boolean
-  balance   Float
-  type      AccountType
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id                 String      @id @default(uuid())
+  active             Boolean     @default(true)
+  balance            Float       @default(0)
+  type               AccountType
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  pendingTransaction Boolean     @default(false)
+
+  // Relações com Transaction
+  sentTransactions     Transaction[] @relation("FromAccount")
+  receivedTransactions Transaction[] @relation("ToAccount")
+  User                 User?         @relation(fields: [userId], references: [id])
+  userId               Int?
 
   @@map("accounts")
 }
@@ -29,4 +52,26 @@ model Account {
 enum AccountType {
   current_account
   investment_account
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  fromAccountId String?
+  toAccountId   String?
+  amount        Float
+  type          TransactionType
+  description   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relações com Account
+  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id])
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  internal
+  external
 }

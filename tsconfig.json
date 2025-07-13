@@ -22,6 +22,8 @@
       "@database/*": ["./src/database/*"],
       "@src/*": ["./src/*"],
       "@account/*": ["./src/account/*"],
+      "@auth/*": ["./src/auth/*"],
+      "@transaction/*": ["./src/transaction/*"],
     }
   }
 }
