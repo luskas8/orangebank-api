@@ -1,7 +1,20 @@
 import { PrismaService } from '@database/prisma/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { Transaction } from '@prisma/client';
+import { Account, Transaction, User } from '@prisma/client';
 import { TransactionException } from '@src/exception/transaction.exception';
+
+interface AccountWithUser extends Pick<Account, 'id'> {
+  User?: User | null;
+}
+
+interface AccountWithUserResponse extends Omit<AccountWithUser, 'User'> {
+  user?: User | null;
+}
+
+interface TransactionWithAccounts extends Transaction {
+  fromAccount?: AccountWithUser | AccountWithUserResponse | null;
+  toAccount?: AccountWithUser | AccountWithUserResponse | null;
+}
 
 @Injectable()
 export class TransactionService {
@@ -204,5 +217,71 @@ export class TransactionService {
 
       return transaction;
     });
+  }
+
+  async getTransactionHistory(
+    accountId: string,
+    limit: number = 5,
+    offset: number = 0,
+  ): Promise<TransactionWithAccounts[]> {
+    const include = {
+      select: {
+        id: true,
+        User: {
+          select: {
+            name: true,
+            cpf: true,
+          },
+        },
+      },
+    };
+    const transactions = await this.prismaService.transaction.findMany({
+      where: {
+        OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+      include: {
+        fromAccount: include,
+        toAccount: include,
+      },
+    });
+
+    return transactions.map((transaction) =>
+      this.maskCpfInTransaction(transaction as TransactionWithAccounts),
+    );
+  }
+
+  private maskCpfInTransaction(
+    transaction: TransactionWithAccounts,
+  ): TransactionWithAccounts {
+    const maskCpf = (cpf: string) => cpf.slice(-5).padStart(11, '*');
+
+    const processAccount = (
+      account: AccountWithUser | null,
+    ): AccountWithUserResponse | null => {
+      if (!account) return null;
+
+      return {
+        ...account,
+        user: account.User
+          ? {
+              ...account.User,
+              cpf: maskCpf(account.User.cpf),
+            }
+          : null,
+      };
+    };
+
+    return {
+      ...transaction,
+      fromAccount: processAccount(
+        transaction.fromAccount as AccountWithUser | null,
+      ),
+      toAccount: processAccount(
+        transaction.toAccount as AccountWithUser | null,
+      ),
+    } as TransactionWithAccounts;
   }
 }

@@ -20,7 +20,7 @@ model User {
   name      String
   email     String   @unique
   cpf       String   @unique
-  birthDate  DateTime
+  birthDate DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   password  String
@@ -74,4 +74,59 @@ model Transaction {
 enum TransactionType {
   internal
   external
+  asset_purchase
+  asset_sale
+}
+
+model Stock {
+  id             String   @id
+  name           String
+  sector         String
+  currentPrice   Float
+  dailyVariation Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relações com StockHistory
+  StockHistory StockHistory[]
+
+  @@map("stocks")
+}
+
+model StockHistory {
+  id        String   @id @default(cuid())
+  stockId   String
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações com Asset
+  asset Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@index([stockId, createdAt])
+  @@map("stock_history")
+}
+
+model FixedIncome {
+  id                String   @id
+  name              String
+  type              String
+  rate              Float
+  rateType          String
+  maturity          DateTime
+  minimumInvestment Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("fixed_incomes")
+}
+
+enum FixedIncomeType {
+  cdb
+  tesouro_direto
+}
+
+enum FixedIncomeRateType {
+  pre
+  pos
 }

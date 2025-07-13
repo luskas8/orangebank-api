@@ -27,6 +27,7 @@
     "^@src/(.*)$": "<rootDir>/src/$1",
     "^@account/(.*)$": "<rootDir>/src/account/$1",
     "^@auth/(.*)$": "<rootDir>/src/auth/$1",
-    "^@transaction/(.*)$": "<rootDir>/src/transaction/$1"
+    "^@transaction/(.*)$": "<rootDir>/src/transaction/$1",
+    "^@market/(.*)$": "<rootDir>/src/market/$1"
   }
 }

@@ -7,6 +7,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { CleanCpf } from '../decorators/clean-cpf.decorator';
+
 export class RegisterDto {
   @ApiProperty({
     description: 'User email address',
@@ -38,6 +40,7 @@ export class RegisterDto {
     example: '123.456.789-09',
     required: true,
   })
+  @CleanCpf()
   @IsString()
   @IsNotEmpty()
   @MinLength(11)

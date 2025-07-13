@@ -49,6 +49,7 @@ describe('TransactionService', () => {
       },
       transaction: {
         create: jest.fn(),
+        findMany: jest.fn(),
       },
       $transaction: jest.fn(),
     };
@@ -1039,6 +1040,294 @@ describe('TransactionService', () => {
 
       // THEN
       expect(result).toEqual(expectedTransaction);
+    });
+  });
+
+  describe('getTransactionHistory', () => {
+    const mockTransactionWithAccounts = {
+      id: 'transaction-1',
+      fromAccountId: 'account-1',
+      toAccountId: 'account-2',
+      amount: 100,
+      type: 'internal',
+      description: 'Test transfer',
+      createdAt: new Date('2025-01-01T00:00:00Z'),
+      updatedAt: new Date('2025-01-01T00:00:00Z'),
+      fromAccount: {
+        id: 'account-1',
+        User: {
+          name: 'John Doe',
+          cpf: '12345678901',
+        },
+      },
+      toAccount: {
+        id: 'account-2',
+        User: {
+          name: 'Jane Smith',
+          cpf: '98765432109',
+        },
+      },
+    };
+
+    const expectedMaskedTransaction = {
+      id: 'transaction-1',
+      fromAccountId: 'account-1',
+      toAccountId: 'account-2',
+      amount: 100,
+      type: 'internal',
+      description: 'Test transfer',
+      createdAt: new Date('2025-01-01T00:00:00Z'),
+      updatedAt: new Date('2025-01-01T00:00:00Z'),
+      fromAccount: {
+        id: 'account-1',
+        User: {
+          name: 'John Doe',
+          cpf: '12345678901',
+        },
+        user: {
+          name: 'John Doe',
+          cpf: '******78901',
+        },
+      },
+      toAccount: {
+        id: 'account-2',
+        User: {
+          name: 'Jane Smith',
+          cpf: '98765432109',
+        },
+        user: {
+          name: 'Jane Smith',
+          cpf: '******32109',
+        },
+      },
+    };
+
+    it('should return transaction history with masked CPFs', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const limit = 5;
+      const offset = 0;
+
+      prismaService.transaction.findMany.mockResolvedValue([
+        mockTransactionWithAccounts,
+      ]);
+
+      // WHEN
+      const result = await service.getTransactionHistory(
+        accountId,
+        limit,
+        offset,
+      );
+
+      // THEN
+      expect(result).toEqual([expectedMaskedTransaction]);
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: {
+          fromAccount: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  name: true,
+                  cpf: true,
+                },
+              },
+            },
+          },
+          toAccount: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  name: true,
+                  cpf: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    it('should use default values for limit and offset', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+
+      prismaService.transaction.findMany.mockResolvedValue([
+        mockTransactionWithAccounts,
+      ]);
+
+      // WHEN
+      await service.getTransactionHistory(accountId);
+
+      // THEN
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5, // default limit
+        skip: 0, // default offset
+        include: {
+          fromAccount: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  name: true,
+                  cpf: true,
+                },
+              },
+            },
+          },
+          toAccount: {
+            select: {
+              id: true,
+              User: {
+                select: {
+                  name: true,
+                  cpf: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    it('should return empty array when no transactions found', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const limit = 5;
+      const offset = 0;
+
+      prismaService.transaction.findMany.mockResolvedValue([]);
+
+      // WHEN
+      const result = await service.getTransactionHistory(
+        accountId,
+        limit,
+        offset,
+      );
+
+      // THEN
+      expect(result).toEqual([]);
+    });
+
+    it('should handle transactions with null accounts', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const transactionWithNullAccounts = {
+        ...mockTransactionWithAccounts,
+        fromAccount: null,
+        toAccount: null,
+      };
+      const expectedResultWithNullAccounts = {
+        ...expectedMaskedTransaction,
+        fromAccount: null,
+        toAccount: null,
+      };
+
+      prismaService.transaction.findMany.mockResolvedValue([
+        transactionWithNullAccounts,
+      ]);
+
+      // WHEN
+      const result = await service.getTransactionHistory(accountId);
+
+      // THEN
+      expect(result).toEqual([expectedResultWithNullAccounts]);
+    });
+
+    it('should handle transactions with accounts but no users', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const transactionWithNoUsers = {
+        ...mockTransactionWithAccounts,
+        fromAccount: {
+          id: 'account-1',
+          User: null,
+        },
+        toAccount: {
+          id: 'account-2',
+          User: null,
+        },
+      };
+      const expectedResultWithNoUsers = {
+        ...expectedMaskedTransaction,
+        fromAccount: {
+          id: 'account-1',
+          User: null,
+          user: null,
+        },
+        toAccount: {
+          id: 'account-2',
+          User: null,
+          user: null,
+        },
+      };
+
+      prismaService.transaction.findMany.mockResolvedValue([
+        transactionWithNoUsers,
+      ]);
+
+      // WHEN
+      const result = await service.getTransactionHistory(accountId);
+
+      // THEN
+      expect(result).toEqual([expectedResultWithNoUsers]);
+    });
+
+    it('should mask CPF correctly for different CPF lengths', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const transactionWithShortCpf = {
+        ...mockTransactionWithAccounts,
+        fromAccount: {
+          id: 'account-1',
+          User: {
+            name: 'John Doe',
+            cpf: '123',
+          },
+        },
+      };
+
+      prismaService.transaction.findMany.mockResolvedValue([
+        transactionWithShortCpf,
+      ]);
+
+      // WHEN
+      const result = await service.getTransactionHistory(accountId);
+
+      // THEN
+      const fromAccount = result[0].fromAccount as any;
+      expect(fromAccount?.user?.cpf).toBe('********123');
+    });
+
+    it('should handle pagination correctly', async () => {
+      // GIVEN
+      const accountId = 'account-1';
+      const limit = 10;
+      const offset = 20;
+
+      prismaService.transaction.findMany.mockResolvedValue([]);
+
+      // WHEN
+      await service.getTransactionHistory(accountId, limit, offset);
+
+      // THEN
+      expect(prismaService.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: limit,
+          skip: offset,
+        }),
+      );
     });
   });
 });
