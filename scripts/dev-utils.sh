@@ -41,6 +41,8 @@ if [[ "$CMD_ARG" == "$SETUP_ARG" ]]; then
     echo "NODE_ENV=dev" >> "${LOCAL_FOLDER}/.env"
     echo "PORT=3003" >> "${LOCAL_FOLDER}/.env"
     echo "DATABASE_URL=\"postgresql://backend-orangebank:backend-orangebank@localhost:5432/dev-orangebank\"" >> "${LOCAL_FOLDER}/.env"
+    echo "JWT_SECRET=\"dev-secret\"" >> "${LOCAL_FOLDER}/.env"
+    echo "JWT_EXPIRES_IN=\"1h\"" >> "${LOCAL_FOLDER}/.env"
 # run the local repository
 elif [[ "$CMD_ARG" == "$RUN_ARG" ]]; then
     echo "Running local repository..."
