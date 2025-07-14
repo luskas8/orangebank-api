@@ -50,6 +50,7 @@ const mockTransaction: Transaction = {
   description: 'Purchase of 10 AAPL shares',
   createdAt: new Date('2025-07-13T00:00:00Z'),
   updatedAt: new Date('2025-07-13T00:00:00Z'),
+  category: 'investment',
 };
 
 describe('MarketController', () => {
