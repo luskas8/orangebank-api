@@ -19,6 +19,7 @@ interface TransactionWithAccounts extends Transaction {
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
+  private readonly MAX_QUERY_LIMIT = 50;
 
   constructor(private readonly prismaService: PrismaService) {}
 
@@ -54,6 +55,7 @@ export class TransactionService {
           fromAccountId: null,
           toAccountId: accountId,
           type: 'internal',
+          category: 'deposit',
           amount,
           description: 'Deposit',
         },
@@ -104,6 +106,7 @@ export class TransactionService {
           fromAccountId: accountId,
           toAccountId: null,
           type: 'internal',
+          category: 'withdrawal',
           amount,
           description: 'Withdrawal',
         },
@@ -238,9 +241,12 @@ export class TransactionService {
     const transactions = await this.prismaService.transaction.findMany({
       where: {
         OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+        category: {
+          not: 'investment',
+        },
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: Math.min(limit, this.MAX_QUERY_LIMIT),
       skip: offset,
       include: {
         fromAccount: include,

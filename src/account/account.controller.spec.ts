@@ -40,6 +40,7 @@ const mockTransaction: Transaction = {
   fromAccountId: '1',
   toAccountId: '2',
   amount: 100,
+  category: 'transfer',
   description: 'Test transaction',
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),

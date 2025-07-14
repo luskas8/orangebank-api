@@ -43,8 +43,14 @@ model Account {
   // Relações com Transaction
   sentTransactions     Transaction[] @relation("FromAccount")
   receivedTransactions Transaction[] @relation("ToAccount")
-  User                 User?         @relation(fields: [userId], references: [id])
-  userId               Int?
+
+  // Relações com User
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  // Relações com Portfolio
+  portfolioId String?    @unique
+  portfolio   Portfolio?
 
   @@map("accounts")
 }
@@ -55,20 +61,28 @@ enum AccountType {
 }
 
 model Transaction {
-  id            String          @id @default(uuid())
+  id            String              @id @default(uuid())
   fromAccountId String?
   toAccountId   String?
   amount        Float
   type          TransactionType
+  category      TransactionCategory @default(transfer)
   description   String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   // Relações com Account
   fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id])
   toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id])
 
   @@map("transactions")
+}
+
+enum TransactionCategory {
+  deposit
+  withdrawal
+  transfer
+  investment
 }
 
 enum TransactionType {
@@ -129,4 +143,16 @@ enum FixedIncomeType {
 enum FixedIncomeRateType {
   pre
   pos
+}
+
+model Portfolio {
+  id        String   @id @default(uuid())
+  accountId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações com Account
+  Account Account @relation(fields: [accountId], references: [id])
+
+  @@map("portfolios")
 }

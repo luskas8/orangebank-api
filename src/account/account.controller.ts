@@ -699,7 +699,7 @@ export class AccountController {
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Number of transactions to return (default: 5, max: 100)',
+    description: 'Number of transactions to return (default: 5, max: 50)',
     example: 10,
   })
   @ApiQuery({

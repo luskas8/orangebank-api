@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Backend para o hackathon do orange-juice, com desafio de criar um mini banco de investimentos",
   "author": "",
   "private": true,
@@ -24,7 +24,8 @@
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:cmd": "./scripts/prisma-cmd.sh"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

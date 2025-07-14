@@ -31,6 +31,7 @@ const mockTransaction: Transaction = {
   fromAccountId: null,
   toAccountId: 'account-1',
   amount: 100,
+  category: 'deposit',
   type: 'internal',
   description: null,
   createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -1050,6 +1051,7 @@ describe('TransactionService', () => {
       toAccountId: 'account-2',
       amount: 100,
       type: 'internal',
+      category: 'transfer',
       description: 'Test transfer',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -1075,6 +1077,7 @@ describe('TransactionService', () => {
       toAccountId: 'account-2',
       amount: 100,
       type: 'internal',
+      category: 'transfer',
       description: 'Test transfer',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -1124,6 +1127,9 @@ describe('TransactionService', () => {
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
           OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+          category: {
+            not: 'investment',
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -1170,6 +1176,9 @@ describe('TransactionService', () => {
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
           OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+          category: {
+            not: 'investment',
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 5, // default limit
