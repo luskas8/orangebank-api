@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: npm ci
+      - name: Generate Prisma client
+        run: npm run prisma:generate
       - name: Build project
         run: npm run build --if-present
       - name: Run Unit Tests
