@@ -22,6 +22,7 @@ const mockAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockInvestmentAccount: Account = {
@@ -33,6 +34,7 @@ const mockInvestmentAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockTransaction: Transaction = {

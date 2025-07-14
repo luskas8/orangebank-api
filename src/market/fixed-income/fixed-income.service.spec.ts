@@ -33,6 +33,7 @@ const mockInvestmentAccount: Account = {
   createdAt: new Date('2025-07-13T00:00:00Z'),
   updatedAt: new Date('2025-07-13T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockTransaction: Transaction = {
@@ -44,6 +45,7 @@ const mockTransaction: Transaction = {
   description: 'Purchase of 1000 CDB001 units at $1.00 each',
   createdAt: new Date('2025-07-13T00:00:00Z'),
   updatedAt: new Date('2025-07-13T00:00:00Z'),
+  category: 'investment',
 };
 
 describe('FixedIncomeService', () => {
