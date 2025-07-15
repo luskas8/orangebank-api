@@ -11,7 +11,10 @@ import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { DepositDto, TransactionDto, WithdrawDto } from './dto/transaction.dto';
-import { TransactionService } from './transaction.service';
+import {
+  TransactionService,
+  TransactionWithAccounts,
+} from './transaction.service';
 
 const mockAccount: Account = {
   id: '1',
@@ -53,7 +56,7 @@ const mockTransactionWithAccounts = {
   ...mockTransaction,
   fromAccount: { id: '1', user: { name: 'John Doe', cpf: '***123456' } },
   toAccount: { id: '2', user: { name: 'Jane Smith', cpf: '***654321' } },
-};
+} as TransactionWithAccounts;
 
 const mockUser: LoggedInUser = {
   id: 1,

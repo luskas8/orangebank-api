@@ -1059,14 +1059,14 @@ describe('TransactionService', () => {
       updatedAt: new Date('2025-01-01T00:00:00Z'),
       fromAccount: {
         id: 'account-1',
-        User: {
+        user: {
           name: 'John Doe',
           cpf: '12345678901',
         },
       },
       toAccount: {
         id: 'account-2',
-        User: {
+        user: {
           name: 'Jane Smith',
           cpf: '98765432109',
         },
@@ -1085,10 +1085,6 @@ describe('TransactionService', () => {
       updatedAt: new Date('2025-01-01T00:00:00Z'),
       fromAccount: {
         id: 'account-1',
-        User: {
-          name: 'John Doe',
-          cpf: '12345678901',
-        },
         user: {
           name: 'John Doe',
           cpf: '******78901',
@@ -1096,10 +1092,6 @@ describe('TransactionService', () => {
       },
       toAccount: {
         id: 'account-2',
-        User: {
-          name: 'Jane Smith',
-          cpf: '98765432109',
-        },
         user: {
           name: 'Jane Smith',
           cpf: '******32109',
@@ -1140,7 +1132,7 @@ describe('TransactionService', () => {
           fromAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1151,7 +1143,7 @@ describe('TransactionService', () => {
           toAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1189,7 +1181,7 @@ describe('TransactionService', () => {
           fromAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1200,7 +1192,7 @@ describe('TransactionService', () => {
           toAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1263,23 +1255,21 @@ describe('TransactionService', () => {
         ...mockTransactionWithAccounts,
         fromAccount: {
           id: 'account-1',
-          User: null,
+          user: null,
         },
         toAccount: {
           id: 'account-2',
-          User: null,
+          user: null,
         },
       };
       const expectedResultWithNoUsers = {
         ...expectedMaskedTransaction,
         fromAccount: {
           id: 'account-1',
-          User: null,
           user: null,
         },
         toAccount: {
           id: 'account-2',
-          User: null,
           user: null,
         },
       };
@@ -1302,7 +1292,7 @@ describe('TransactionService', () => {
         ...mockTransactionWithAccounts,
         fromAccount: {
           id: 'account-1',
-          User: {
+          user: {
             name: 'John Doe',
             cpf: '123',
           },
