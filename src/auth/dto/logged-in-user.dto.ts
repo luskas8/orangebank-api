@@ -18,7 +18,7 @@ export class LoggedInUser {
     example: 'password123',
     minLength: 6,
   })
-  password: string;
+  password: string | null;
 
   @ApiProperty({
     description: 'User full name',
