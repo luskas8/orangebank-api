@@ -29,8 +29,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    # needs: apply-migrations
-    # if: success()
+    needs: apply-migrations
+    if: success()
 
     steps:
       - name: Checkout code
