@@ -699,7 +699,7 @@ export class AccountController {
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Number of transactions to return (default: 5, max: 100)',
+    description: 'Number of transactions to return (default: 5, max: 50)',
     example: 10,
   })
   @ApiQuery({
@@ -778,7 +778,7 @@ export class AccountController {
     @Param('id') id: string,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
-  ): Promise<Transaction[]> {
+  ): Promise<TransactionResponseDto[]> {
     const account = await this.accountService.findOne(id);
     if (!account) {
       this.logger.warn(`Account not found for transactions: ${id}`);
@@ -807,7 +807,7 @@ export class AccountController {
         throw new NotFoundException('No transactions found for this account.');
       }
 
-      return transactions;
+      return transactions as unknown as TransactionResponseDto[];
     } catch (error: unknown) {
       if (
         error instanceof NotFoundException ||

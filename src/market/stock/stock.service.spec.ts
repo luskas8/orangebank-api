@@ -31,6 +31,7 @@ const mockInvestmentAccount: Account = {
   createdAt: new Date('2025-07-13T00:00:00Z'),
   updatedAt: new Date('2025-07-13T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockTransaction: Transaction = {
@@ -43,6 +44,7 @@ const mockTransaction: Transaction = {
     'Purchase of 10 AAPL shares at $150.25 each (Brokerage fee: $15.03)',
   createdAt: new Date('2025-07-13T00:00:00Z'),
   updatedAt: new Date('2025-07-13T00:00:00Z'),
+  category: 'investment',
 };
 
 describe('StockService', () => {

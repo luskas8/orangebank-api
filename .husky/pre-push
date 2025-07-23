@@ -1,0 +1,2 @@
+npm run prisma:generate dev
+npm test

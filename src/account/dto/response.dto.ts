@@ -51,6 +51,31 @@ export class AccountResponseDto {
   pendingTransaction: boolean;
 }
 
+export class UserDetails {
+  @ApiProperty({
+    description: 'User name',
+    example: 1,
+  })
+  name: string;
+  @ApiProperty({
+    description: 'User cpf',
+    example: 'email@email.com',
+  })
+  cpf: string;
+}
+
+export class AccountDetails {
+  @ApiProperty({
+    description: 'Unique account identifier',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id: string;
+  @ApiProperty({
+    description: 'User related to the account',
+  })
+  user: UserDetails;
+}
+
 export class TransactionResponseDto {
   @ApiProperty({
     description: 'Unique transaction identifier',
@@ -62,14 +87,14 @@ export class TransactionResponseDto {
     description: 'Source account ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  fromAccountId: string;
+  fromAccount: AccountDetails | null;
 
   @ApiProperty({
     description: 'Destination account ID (null for deposits/withdrawals)',
     example: '789e0123-e45f-67g8-h901-234567890123',
     nullable: true,
   })
-  toAccountId: string | null;
+  toAccount: AccountDetails | null;
 
   @ApiProperty({
     description: 'Transaction amount',
@@ -79,10 +104,17 @@ export class TransactionResponseDto {
 
   @ApiProperty({
     description: 'Transaction type',
-    enum: ['deposit', 'withdraw', 'transfer'],
+    enum: ['internal', 'external', 'asset_purchase', 'asset_sale'],
     example: 'transfer',
   })
-  type: string;
+  type: 'internal' | 'external' | 'asset_purchase' | 'asset_sale';
+
+  @ApiProperty({
+    description: 'Transaction category',
+    enum: ['deposit', 'withdrawal', 'transfer', 'investment'],
+    example: 'deposit',
+  })
+  category: 'deposit' | 'withdrawal' | 'transfer' | 'investment';
 
   @ApiProperty({
     description: 'Transaction description',

@@ -3,6 +3,8 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ErrorResponseDto } from '@src/common/dto/error-response.dto';
 import { AuthService } from './auth.service';
+import { GetUser } from './decorators/get-user.decorator';
+import { LoggedInUser } from './dto/logged-in-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -129,5 +131,33 @@ export class AuthController {
   })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('profile')
+  @ApiOperation({
+    summary: 'Get user profile',
+    description: 'Retrieve the authenticated user profile information.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved successfully',
+    schema: {
+      example: {
+        userId: 1,
+        email: '',
+        name: '',
+        cpf: '',
+        createdAt: '2025-07-13T18:15:45.123Z',
+        updatedAt: '2025-07-13T18:15:45.123Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - User not authenticated',
+    type: ErrorResponseDto,
+  })
+  async getProfile(@GetUser() user: LoggedInUser) {
+    return await this.authService.getProfile(user.id);
   }
 }

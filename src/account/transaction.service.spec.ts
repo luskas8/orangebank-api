@@ -13,6 +13,7 @@ const mockAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockInvestmentAccount: Account = {
@@ -24,6 +25,7 @@ const mockInvestmentAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockTransaction: Transaction = {
@@ -31,6 +33,7 @@ const mockTransaction: Transaction = {
   fromAccountId: null,
   toAccountId: 'account-1',
   amount: 100,
+  category: 'deposit',
   type: 'internal',
   description: null,
   createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -1050,19 +1053,20 @@ describe('TransactionService', () => {
       toAccountId: 'account-2',
       amount: 100,
       type: 'internal',
+      category: 'transfer',
       description: 'Test transfer',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       updatedAt: new Date('2025-01-01T00:00:00Z'),
       fromAccount: {
         id: 'account-1',
-        User: {
+        user: {
           name: 'John Doe',
           cpf: '12345678901',
         },
       },
       toAccount: {
         id: 'account-2',
-        User: {
+        user: {
           name: 'Jane Smith',
           cpf: '98765432109',
         },
@@ -1075,15 +1079,12 @@ describe('TransactionService', () => {
       toAccountId: 'account-2',
       amount: 100,
       type: 'internal',
+      category: 'transfer',
       description: 'Test transfer',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       updatedAt: new Date('2025-01-01T00:00:00Z'),
       fromAccount: {
         id: 'account-1',
-        User: {
-          name: 'John Doe',
-          cpf: '12345678901',
-        },
         user: {
           name: 'John Doe',
           cpf: '******78901',
@@ -1091,10 +1092,6 @@ describe('TransactionService', () => {
       },
       toAccount: {
         id: 'account-2',
-        User: {
-          name: 'Jane Smith',
-          cpf: '98765432109',
-        },
         user: {
           name: 'Jane Smith',
           cpf: '******32109',
@@ -1124,6 +1121,9 @@ describe('TransactionService', () => {
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
           OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+          category: {
+            not: 'investment',
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
@@ -1132,7 +1132,7 @@ describe('TransactionService', () => {
           fromAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1143,7 +1143,7 @@ describe('TransactionService', () => {
           toAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1170,6 +1170,9 @@ describe('TransactionService', () => {
       expect(prismaService.transaction.findMany).toHaveBeenCalledWith({
         where: {
           OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+          category: {
+            not: 'investment',
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: 5, // default limit
@@ -1178,7 +1181,7 @@ describe('TransactionService', () => {
           fromAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1189,7 +1192,7 @@ describe('TransactionService', () => {
           toAccount: {
             select: {
               id: true,
-              User: {
+              user: {
                 select: {
                   name: true,
                   cpf: true,
@@ -1252,23 +1255,21 @@ describe('TransactionService', () => {
         ...mockTransactionWithAccounts,
         fromAccount: {
           id: 'account-1',
-          User: null,
+          user: null,
         },
         toAccount: {
           id: 'account-2',
-          User: null,
+          user: null,
         },
       };
       const expectedResultWithNoUsers = {
         ...expectedMaskedTransaction,
         fromAccount: {
           id: 'account-1',
-          User: null,
           user: null,
         },
         toAccount: {
           id: 'account-2',
-          User: null,
           user: null,
         },
       };
@@ -1291,7 +1292,7 @@ describe('TransactionService', () => {
         ...mockTransactionWithAccounts,
         fromAccount: {
           id: 'account-1',
-          User: {
+          user: {
             name: 'John Doe',
             cpf: '123',
           },

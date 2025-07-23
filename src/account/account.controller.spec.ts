@@ -11,7 +11,10 @@ import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { DepositDto, TransactionDto, WithdrawDto } from './dto/transaction.dto';
-import { TransactionService } from './transaction.service';
+import {
+  TransactionService,
+  TransactionWithAccounts,
+} from './transaction.service';
 
 const mockAccount: Account = {
   id: '1',
@@ -22,6 +25,7 @@ const mockAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockInvestmentAccount: Account = {
@@ -33,6 +37,7 @@ const mockInvestmentAccount: Account = {
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
   pendingTransaction: false,
+  portfolioId: null,
 };
 
 const mockTransaction: Transaction = {
@@ -40,6 +45,7 @@ const mockTransaction: Transaction = {
   fromAccountId: '1',
   toAccountId: '2',
   amount: 100,
+  category: 'transfer',
   description: 'Test transaction',
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -50,7 +56,7 @@ const mockTransactionWithAccounts = {
   ...mockTransaction,
   fromAccount: { id: '1', user: { name: 'John Doe', cpf: '***123456' } },
   toAccount: { id: '2', user: { name: 'Jane Smith', cpf: '***654321' } },
-};
+} as TransactionWithAccounts;
 
 const mockUser: LoggedInUser = {
   id: 1,

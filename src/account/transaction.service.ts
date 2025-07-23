@@ -4,21 +4,18 @@ import { Account, Transaction, User } from '@prisma/client';
 import { TransactionException } from '@src/exception/transaction.exception';
 
 interface AccountWithUser extends Pick<Account, 'id'> {
-  User?: User | null;
-}
-
-interface AccountWithUserResponse extends Omit<AccountWithUser, 'User'> {
   user?: User | null;
 }
 
-interface TransactionWithAccounts extends Transaction {
-  fromAccount?: AccountWithUser | AccountWithUserResponse | null;
-  toAccount?: AccountWithUser | AccountWithUserResponse | null;
+export interface TransactionWithAccounts extends Transaction {
+  fromAccount?: AccountWithUser | null;
+  toAccount?: AccountWithUser | null;
 }
 
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name);
+  private readonly MAX_QUERY_LIMIT = 50;
 
   constructor(private readonly prismaService: PrismaService) {}
 
@@ -54,6 +51,7 @@ export class TransactionService {
           fromAccountId: null,
           toAccountId: accountId,
           type: 'internal',
+          category: 'deposit',
           amount,
           description: 'Deposit',
         },
@@ -104,6 +102,7 @@ export class TransactionService {
           fromAccountId: accountId,
           toAccountId: null,
           type: 'internal',
+          category: 'withdrawal',
           amount,
           description: 'Withdrawal',
         },
@@ -227,7 +226,7 @@ export class TransactionService {
     const include = {
       select: {
         id: true,
-        User: {
+        user: {
           select: {
             name: true,
             cpf: true,
@@ -235,22 +234,35 @@ export class TransactionService {
         },
       },
     };
-    const transactions = await this.prismaService.transaction.findMany({
-      where: {
-        OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-      include: {
-        fromAccount: include,
-        toAccount: include,
-      },
-    });
+    try {
+      const transactions = await this.prismaService.transaction.findMany({
+        where: {
+          OR: [{ fromAccountId: accountId }, { toAccountId: accountId }],
+          category: {
+            not: 'investment',
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: {
+          fromAccount: include,
+          toAccount: include,
+        },
+      });
 
-    return transactions.map((transaction) =>
-      this.maskCpfInTransaction(transaction as TransactionWithAccounts),
-    );
+      return transactions.map((transaction) =>
+        this.maskCpfInTransaction(transaction as Transaction),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error fetching transaction history for account ${accountId}: ${error.message}`,
+      );
+      throw new TransactionException(
+        'FETCH_HISTORY_ERROR',
+        'Error fetching transaction history',
+      );
+    }
   }
 
   private maskCpfInTransaction(
@@ -260,15 +272,15 @@ export class TransactionService {
 
     const processAccount = (
       account: AccountWithUser | null,
-    ): AccountWithUserResponse | null => {
+    ): AccountWithUser | null => {
       if (!account) return null;
 
       return {
         ...account,
-        user: account.User
+        user: account.user
           ? {
-              ...account.User,
-              cpf: maskCpf(account.User.cpf),
+              ...account.user,
+              cpf: maskCpf(account.user.cpf),
             }
           : null,
       };

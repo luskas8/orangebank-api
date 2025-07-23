@@ -74,6 +74,7 @@ async function bootstrap() {
       `http://localhost:${process.env.PORT ?? 3000}`,
       'Local development server',
     )
+    .addServer('https://api.luskas8.pro/', 'Production server')
     .setContact('luskas8', 'https://github.com/luskas8/orangebank-api', '')
     .setLicense('UNLICENSED', '')
     .build();

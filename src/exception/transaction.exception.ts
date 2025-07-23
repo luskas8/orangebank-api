@@ -5,7 +5,8 @@ type TransactionExceptionType =
   | 'INSUFFICIENT_BALANCE'
   | 'SAME_ACCOUNT_TRANSFER'
   | 'INSUFFICIENT_FUNDS'
-  | 'PENDING_TRANSACTION';
+  | 'PENDING_TRANSACTION'
+  | 'FETCH_HISTORY_ERROR';
 
 export class TransactionException extends Error {
   constructor(type: TransactionExceptionType, message: string, cause?: string) {

@@ -140,4 +140,20 @@ export class AuthService {
       updatedAt: user.updatedAt.toISOString(),
     } as LoggedInUser;
   }
+
+  async getProfile(userId: number): Promise<LoggedInUser> {
+    const user = await this.findById(userId);
+
+    const accounts = await this.prismaService.account.findMany({
+      where: { userId },
+    });
+
+    accounts.forEach((account) => {
+      user[account.type.split('_')[0]] = account.id;
+    });
+    return {
+      ...user,
+      password: null,
+    } as LoggedInUser;
+  }
 }
